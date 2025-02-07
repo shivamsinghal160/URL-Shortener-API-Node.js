@@ -1,9 +1,6 @@
 # ignore ALL .log files
 *.log
 
-# ignore ALL .json files
-*.json
-
 # ignore ALL .txt files
 *.txt
 
