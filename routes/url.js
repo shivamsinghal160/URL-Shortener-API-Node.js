@@ -28,11 +28,10 @@ router.post(
       // Check if the URL already exists in the database
       const checkExistResult = await runQuery(
         conn,
-        "SELECT * FROM urls WHERE original_url = ?",
+        "SELECT original_url, short_url_id, created_at FROM urls WHERE original_url = ?",
         [url]
       );
-      console.log(checkExistResult, "checkExistResult");
-
+      
       // if ERROR return
       if (checkExistResult.status === "ERROR") {
         return res.status(500).json({
