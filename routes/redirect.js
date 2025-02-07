@@ -22,6 +22,7 @@ router.get("/:shortUrl", async (req, res) => {
       });
     }
 
+    // Redirect User to Original URL
     res.redirect(fetchOriginalUrl[0].original_url);
   } catch (error) {
     console.log("Error in redirecting to original URL ---> ", error);
