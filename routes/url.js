@@ -31,7 +31,7 @@ router.post(
         "SELECT original_url, short_url_id, created_at FROM urls WHERE original_url = ?",
         [url]
       );
-      
+
       // if ERROR return
       if (checkExistResult.status === "ERROR") {
         return res.status(500).json({
@@ -42,6 +42,9 @@ router.post(
       }
 
       if (checkExistResult.length > 0) {
+        checkExistResult[0].shortened_url = `${process.env.PUBLIC_URL}/${checkExistResult[0].short_url_id}`;
+        delete checkExistResult[0].short_url_id;
+
         return res.status(200).json({
           status: "OK",
           statusCode: 200,
