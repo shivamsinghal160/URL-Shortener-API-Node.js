@@ -65,7 +65,7 @@ router.post(
           message: "URL shortened successfully",
           data: {
             original_url: url,
-            shortened_url: `http://localhost:3000/${uniqueId}`,
+            shortened_url: `${process.env.PUBLIC_URL}/${uniqueId}`,
           },
         });
       }
