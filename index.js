@@ -13,7 +13,7 @@ app.listen(PORT, () => {
 
 app.get("/", (req, res) => {
   res.status(200).json({
-    status: OK,
+    status: "OK",
     statusCode: 200,
     message:
       "Welcome to URL Shortener API, Please use /api/shorten to shorten your URL",
