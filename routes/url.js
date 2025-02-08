@@ -28,7 +28,7 @@ router.post(
       // Check if the URL already exists in the database
       const checkExistResult = await runQuery(
         conn,
-        "SELECT original_url, short_url_id, created_at FROM urls WHERE original_url = ?",
+        "SELECT original_url, short_url_id FROM urls WHERE original_url = ?",
         [url]
       );
 
