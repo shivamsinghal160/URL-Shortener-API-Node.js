@@ -5,6 +5,10 @@ const { conn } = require("../db");
 const runQuery = require("../utils/queryHandler");
 const isAuthenticated = require("../middleware/isAuthenticated");
 const updateAnalytics = require("../utils/updateAnalytics");
+const {
+  analysisUrlAnalytics,
+  analysisUrlWiseAnalytics,
+} = require("../utils/analysisUrlAnalytics");
 
 const router = express.Router();
 
@@ -81,7 +85,7 @@ router.post("/shorten/:shortUrl", async (req, res) => {
 // ***Route to Shorten URL API***
 router.post(
   "/shorten",
-  // isAuthenticated,
+  isAuthenticated,
   [body("url").isURL().withMessage("Enter a Valid Url")],
   async (req, res) => {
     const errors = validationResult(req);
@@ -102,6 +106,16 @@ router.post(
       if (req.body.custom_alias) {
         isCustomAlias = true;
         custom_alias = req.body.custom_alias;
+
+        // Check if the custom alias is not reserved alias
+        if (custom_alias === "overall") {
+          return res.status(400).json({
+            status: "ERROR",
+            statusCode: 400,
+            message: "'overall' is a reserved alias",
+          });
+        }
+
         const checkAlias = await runQuery(
           conn,
           "SELECT * FROM urls WHERE short_url_id = ?",
@@ -187,7 +201,7 @@ router.post(
           data: {
             original_url: url,
             shortened_url: `${process.env.PUBLIC_URL}/api/shorten/${uniqueId}`,
-            topic
+            topic,
           },
         });
       }
@@ -201,5 +215,125 @@ router.post(
     }
   }
 );
+
+// ***Route to Get Overall URL Analytics***
+router.get("/analytics/overall", async (req, res) => {
+  try {
+    // Fetch URL ID and check existence
+    const urlResult = await runQuery(conn, "SELECT id FROM urls");
+
+    if (urlResult.length === 0) {
+      return res.status(404).json({
+        status: "ERROR",
+        statusCode: 404,
+        message: "No URL found",
+      });
+    }
+
+    const urlId = urlResult.map((item) => item.id).join(",");
+
+    console.log("urlId", urlId);
+
+    let data = await analysisUrlAnalytics(urlId);
+
+    return res.status(200).json({
+      status: "OK",
+      statusCode: 200,
+      message: "Analytics fetched successfully",
+      data,
+    });
+  } catch (error) {
+    console.error("Error fetching analytics:", error);
+    return res.status(500).json({
+      status: "ERROR",
+      statusCode: 500,
+      message: "Internal Server Error",
+    });
+  }
+});
+
+// ***Route to Get URL Analytics by url alias***
+router.get("/analytics/:shortUrl", async (req, res) => {
+  try {
+    const { shortUrl } = req.params;
+
+    // Fetch URL ID and check existence
+    const urlResult = await runQuery(
+      conn,
+      "SELECT id FROM urls WHERE short_url_id = ?",
+      [shortUrl]
+    );
+
+    if (urlResult.length === 0) {
+      return res.status(404).json({
+        status: "ERROR",
+        statusCode: 404,
+        message: "URL not found",
+      });
+    }
+
+    const urlId = urlResult[0].id;
+
+    let data = await analysisUrlAnalytics(urlId);
+
+    return res.status(200).json({
+      status: "OK",
+      statusCode: 200,
+      message: "Analytics fetched successfully",
+      data,
+    });
+  } catch (error) {
+    console.error("Error fetching analytics:", error);
+    return res.status(500).json({
+      status: "ERROR",
+      statusCode: 500,
+      message: "Internal Server Error",
+    });
+  }
+});
+
+// ***Route to Get URL Analytics (Topic Wise)***
+router.get("/analytics/topic/:topic", async (req, res) => {
+  try {
+    let { topic } = req.params;
+
+    topic = topic.trim();
+
+    // Fetch URL ID and check existence
+    const urlResult = await runQuery(
+      conn,
+      "SELECT id FROM urls WHERE topic_id = (SELECT id FROM topic WHERE name = ?)",
+      [topic]
+    );
+    
+    if (urlResult.length === 0) {
+      return res.status(404).json({
+        status: "ERROR",
+        statusCode: 404,
+        message: "No Topic found",
+      });
+    }
+
+    const urlId = urlResult.map((item) => item.id).join(",");
+
+    console.log("urlId", urlId);
+
+    let data = await analysisUrlWiseAnalytics(urlId);
+
+    return res.status(200).json({
+      status: "OK",
+      statusCode: 200,
+      message: "Analytics fetched successfully",
+      data,
+    });
+  } catch (error) {
+    console.error("Error fetching analytics:", error);
+    return res.status(500).json({
+      status: "ERROR",
+      statusCode: 500,
+      message: "Internal Server Error",
+    });
+  }
+});
 
 module.exports = router;

@@ -15,7 +15,7 @@ app.use(
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false },
+    cookie: { secure: true },
   })
 );
 
@@ -39,7 +39,7 @@ app.listen(PORT, () => {
 });
 
 // Default Route
-app.get("/", (req, res) => {
+app.get("/", isAuthenticated, (req, res) => {
   res.status(200).json({
     status: "OK",
     user: req.useragent,
