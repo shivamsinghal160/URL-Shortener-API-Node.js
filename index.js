@@ -1,13 +1,15 @@
 require("dotenv").config();
 const express = require("express");
 const useragent = require("express-useragent");
+const passport = require("passport");
+const session = require("express-session");
 const isAuthenticated = require("./middleware/isAuthenticated");
 const getUserIpAddress = require("./middleware/accessIPAddress");
-const passport = require("passport");
 const initPassport = require("./utils/passportStrategy");
-const session = require("express-session");
-const app = express();
+const rateLimit = require("express-rate-limit");
 const PORT = process.env.PORT || 3000;
+
+const app = express();
 
 // Session Middleware
 app.use(
@@ -15,7 +17,7 @@ app.use(
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: true },
+    cookie: { secure: false },
   })
 );
 
@@ -42,14 +44,28 @@ app.listen(PORT, () => {
 app.get("/", isAuthenticated, (req, res) => {
   res.status(200).json({
     status: "OK",
-    user: req.useragent,
     statusCode: 200,
     message: `Hi ${req.user?.name}, Welcome to URL Shortener API, Please use /api/shorten to shorten your URL`,
   });
 });
 
+// Configure Rate Limiter Middleware
+const rateLimiter = rateLimit({
+  windowMs: 10 * 1000, // 10 seconds
+  limit: 5,
+  handler: (req, res, next, options) =>
+    res.status(options.statusCode).json({
+      status: "ERROR",
+      statusCode: 429,
+      error: options.message,
+    }),
+});
+
+// Apply Rate Limiter Middleware to Analytics API
+app.use("/api/analytics", isAuthenticated, rateLimiter);
+
 // Route to authenticate user
 app.use("/auth", require("./routes/auth"));
 
 // Route to shorten URL API
-app.use("/api", require("./routes/url"));
+app.use("/api", require("./routes/api"));

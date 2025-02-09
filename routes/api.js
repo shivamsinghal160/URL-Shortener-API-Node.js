@@ -82,7 +82,7 @@ router.post("/shorten/:shortUrl", async (req, res) => {
   }
 });
 
-// ***Route to Shorten URL API***
+// ***Route to Create Shorten URL API***
 router.post(
   "/shorten",
   isAuthenticated,
@@ -103,7 +103,7 @@ router.post(
       let isCustomAlias = false;
       let custom_alias = "";
       let topic_id = null;
-      if (req.body.custom_alias) {
+      if (req.body.custom_alias && req.body.custom_alias.trim() !== "") {
         isCustomAlias = true;
         custom_alias = req.body.custom_alias;
 
@@ -132,14 +132,14 @@ router.post(
       }
 
       let topic;
-      if (req.body.topic) {
+      if (req.body.topic && req.body.topic.trim() !== "") {
         topic = req.body.topic.trim();
 
         // Check if the topic already exists in the database
         const checkTopic = await runQuery(
           conn,
-          "SELECT * FROM topic WHERE name = ?",
-          [topic]
+          "SELECT * FROM topic WHERE name = ? and user_id = ?",
+          [topic, req.user.id]
         );
 
         if (checkTopic.length === 0) {
@@ -147,7 +147,7 @@ router.post(
           const insertTopic = await runQuery(
             conn,
             "INSERT INTO topic (name, user_id) VALUES (?, ?)",
-            [topic, null]
+            [topic, req.user.id]
           );
           topic_id = insertTopic.insertId;
         } else {
@@ -161,8 +161,8 @@ router.post(
       // Check if the URL already exists in the database
       const checkExistResult = await runQuery(
         conn,
-        "SELECT t1.original_url, t1.short_url_id, COALESCE(t2.name, '') as topic FROM urls t1 LEFT JOIN topic t2 on t2.id = t1.topic_id WHERE t1.original_url = ?",
-        [url]
+        "SELECT t1.original_url, t1.short_url_id, COALESCE(t2.name, '') as topic FROM urls t1 LEFT JOIN topic t2 on t2.id = t1.topic_id WHERE t1.original_url = ? and t1.user_id = ?",
+        [url, req.user.id]
       );
 
       // if ERROR return
@@ -189,8 +189,8 @@ router.post(
       // Insert the URL and uniqueId into the database
       const insertResult = await runQuery(
         conn,
-        "INSERT INTO urls (original_url, short_url_id, topic_id) VALUES (?, ?, ?)",
-        [url, uniqueId, topic_id]
+        "INSERT INTO urls (original_url, short_url_id, topic_id, user_id) VALUES (?, ?, ?, ?)",
+        [url, uniqueId, topic_id, req.user.id]
       );
 
       if (insertResult.affectedRows > 0) {
@@ -217,7 +217,7 @@ router.post(
 );
 
 // ***Route to Get Overall URL Analytics***
-router.get("/analytics/overall", isAuthenticated, async (req, res) => {
+router.get("/analytics/overall", async (req, res) => {
   try {
     // Fetch URL ID and check existence
     const urlResult = await runQuery(
@@ -260,6 +260,9 @@ router.get("/analytics/overall", isAuthenticated, async (req, res) => {
 router.get("/analytics/:shortUrl", isAuthenticated, async (req, res) => {
   try {
     const { shortUrl } = req.params;
+
+    console.log("shortUrl", shortUrl);
+    console.log("req.user.id", req.user.id);
 
     // Fetch URL ID and check existence
     const urlResult = await runQuery(
@@ -306,7 +309,7 @@ router.get("/analytics/topic/:topic", isAuthenticated, async (req, res) => {
     // Fetch URL ID and check existence
     const urlResult = await runQuery(
       conn,
-      "SELECT id FROM urls WHERE topic_id = (SELECT id FROM topic WHERE name = ?) and user_id = ?",
+      "SELECT id FROM urls WHERE topic_id = (SELECT id FROM topic WHERE name = ? and user_id = ?)",
       [topic, req.user.id]
     );
 

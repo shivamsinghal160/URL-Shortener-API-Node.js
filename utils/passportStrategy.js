@@ -57,7 +57,6 @@ const initPassport = async (passport) => {
         id,
       ]);
       done(null, user[0]);
-      done(null, id);
     } catch (error) {
       done(error, null);
     }
