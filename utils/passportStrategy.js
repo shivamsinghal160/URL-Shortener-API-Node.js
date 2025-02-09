@@ -1,4 +1,5 @@
 const initPassport = async (passport) => {
+  const { conn } = require("../db");
   const runQuery = require("./queryHandler");
   const GoogleStrategy = require("passport-google-oauth20").Strategy;
   passport.use(
@@ -10,30 +11,35 @@ const initPassport = async (passport) => {
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
-          //   let user = await runQuery("SELECT * FROM users WHERE googleId = ?", [
-          //     profile.id,
-          //   ]);
+          let user = await runQuery(
+            conn,
+            "SELECT * FROM users WHERE google_id = ?",
+            [profile.id]
+          );
 
-          //   if (user.length > 0) {
-          //     return done(null, user[0]);
-          //   }
+          if (user.length > 0) {
+            return done(null, user[0]);
+          }
 
-          //   let insertUser = await runQuery(
-          //     "INSERT INTO users (googleId, username, email, avatar) VALUES (?, ?, ?, ?)",
-          //     [
-          //       profile.id,
-          //       profile.displayName,
-          //       profile.emails[0].value,
-          //       profile.photos[0].value,
-          //     ]
-          //   );
+          let insertUser = await runQuery(
+            conn,
+            "INSERT INTO users (google_id, name, email, profile) VALUES (?, ?, ?, ?)",
+            [
+              profile.id,
+              profile.displayName,
+              profile.emails[0].value,
+              profile.photos[0].value,
+            ]
+          );
 
-          //   if (insertUser.affectedRows > 0) {
-          //     user = await runQuery("SELECT * FROM users WHERE googleId = ?", [
-          //       profile.id,
-          //     ]);
-          //     return done(null, user[0]);
-          //   }
+          if (insertUser.affectedRows > 0) {
+            user = await runQuery(
+              conn,
+              "SELECT * FROM users WHERE google_id = ?",
+              [profile.id]
+            );
+            return done(null, user[0]);
+          }
 
           return done(null, profile);
         } catch (error) {
@@ -47,8 +53,10 @@ const initPassport = async (passport) => {
   });
   passport.deserializeUser(async (id, done) => {
     try {
-      //   const user = await runQuery("SELECT * FROM users WHERE id = ?", [id]);
-      //   done(null, user[0]);
+      const user = await runQuery(conn, "SELECT * FROM users WHERE id = ?", [
+        id,
+      ]);
+      done(null, user[0]);
       done(null, id);
     } catch (error) {
       done(error, null);
