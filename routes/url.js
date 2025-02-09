@@ -4,6 +4,7 @@ const createUniqueId = require("../utils/createUniqueId");
 const { conn } = require("../db");
 const runQuery = require("../utils/queryHandler");
 const isAuthenticated = require("../middleware/isAuthenticated");
+const updateAnalytics = require("../utils/updateAnalytics");
 
 const router = express.Router();
 
@@ -24,6 +25,9 @@ router.get("/shorten/:shortUrl", async (req, res) => {
         message: "URL not found",
       });
     }
+
+    // UPDATE Analytics for URL
+    updateAnalytics(req, fetchOriginalUrl[0].id, fetchOriginalUrl[0].user_id);
 
     // Redirect User to Original URL
     res.redirect(fetchOriginalUrl[0].original_url);
@@ -55,6 +59,9 @@ router.post("/shorten/:shortUrl", async (req, res) => {
       });
     }
 
+    // UPDATE Analytics for URL
+    updateAnalytics(req, fetchOriginalUrl[0].id, fetchOriginalUrl[0].user_id);
+
     res.json({
       status: "OK",
       statusCode: 200,
@@ -74,7 +81,7 @@ router.post("/shorten/:shortUrl", async (req, res) => {
 // ***Route to Shorten URL API***
 router.post(
   "/shorten",
-  isAuthenticated,
+  // isAuthenticated,
   [body("url").isURL().withMessage("Enter a Valid Url")],
   async (req, res) => {
     const errors = validationResult(req);
@@ -109,7 +116,7 @@ router.post(
       }
 
       if (checkExistResult.length > 0) {
-        checkExistResult[0].shortened_url = `${process.env.PUBLIC_URL}/${checkExistResult[0].short_url_id}`;
+        checkExistResult[0].shortened_url = `${process.env.PUBLIC_URL}/api/shorten/${checkExistResult[0].short_url_id}`;
         delete checkExistResult[0].short_url_id;
 
         return res.status(200).json({
@@ -134,7 +141,7 @@ router.post(
           message: "URL shortened successfully",
           data: {
             original_url: url,
-            shortened_url: `${process.env.PUBLIC_URL}/${uniqueId}`,
+            shortened_url: `${process.env.PUBLIC_URL}/api/shorten/${uniqueId}`,
           },
         });
       }

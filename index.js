@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const useragent = require("express-useragent");
 const isAuthenticated = require("./middleware/isAuthenticated");
 const getUserIpAddress = require("./middleware/accessIPAddress");
 const passport = require("passport");
@@ -26,18 +27,22 @@ initPassport(passport);
 // Middleware to parse JSON data
 app.use(express.json());
 
+// Middleware to Access User IP Address
+app.use(getUserIpAddress);
+
+// Middleware to Access User Agent
+app.use(useragent.express());
+
 // Listen Server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
 // Default Route
-app.get("/", getUserIpAddress, (req, res) => {
-  console.log("Request User:", req.clientIpAddress);
+app.get("/", isAuthenticated, (req, res) => {
   res.status(200).json({
     status: "OK",
     statusCode: 200,
-    client_ip_address: req.clientIpAddress,
     message: `Hi ${req.user?.name}, Welcome to URL Shortener API, Please use /api/shorten to shorten your URL`,
   });
 });
