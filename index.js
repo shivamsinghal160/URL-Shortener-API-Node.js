@@ -39,9 +39,10 @@ app.listen(PORT, () => {
 });
 
 // Default Route
-app.get("/", isAuthenticated, (req, res) => {
+app.get("/", (req, res) => {
   res.status(200).json({
     status: "OK",
+    user: req.useragent,
     statusCode: 200,
     message: `Hi ${req.user?.name}, Welcome to URL Shortener API, Please use /api/shorten to shorten your URL`,
   });

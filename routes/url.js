@@ -96,13 +96,58 @@ router.post(
     try {
       const url = req.body.url;
 
+      let isCustomAlias = false;
+      let custom_alias = "";
+      let topic_id = null;
+      if (req.body.custom_alias) {
+        isCustomAlias = true;
+        custom_alias = req.body.custom_alias;
+        const checkAlias = await runQuery(
+          conn,
+          "SELECT * FROM urls WHERE short_url_id = ?",
+          [custom_alias]
+        );
+
+        if (checkAlias.length > 0) {
+          return res.status(400).json({
+            status: "ERROR",
+            statusCode: 400,
+            message: `'${custom_alias}' alias already exists`,
+          });
+        }
+      }
+
+      let topic;
+      if (req.body.topic) {
+        topic = req.body.topic.trim();
+
+        // Check if the topic already exists in the database
+        const checkTopic = await runQuery(
+          conn,
+          "SELECT * FROM topic WHERE name = ?",
+          [topic]
+        );
+
+        if (checkTopic.length === 0) {
+          // Insert the topic into the database
+          const insertTopic = await runQuery(
+            conn,
+            "INSERT INTO topic (name, user_id) VALUES (?, ?)",
+            [topic, null]
+          );
+          topic_id = insertTopic.insertId;
+        } else {
+          topic_id = checkTopic[0].id;
+        }
+      }
+
       // Generate a unique id
-      const uniqueId = createUniqueId();
+      const uniqueId = !isCustomAlias ? createUniqueId() : custom_alias;
 
       // Check if the URL already exists in the database
       const checkExistResult = await runQuery(
         conn,
-        "SELECT original_url, short_url_id FROM urls WHERE original_url = ?",
+        "SELECT t1.original_url, t1.short_url_id, COALESCE(t2.name, '') as topic FROM urls t1 LEFT JOIN topic t2 on t2.id = t1.topic_id WHERE t1.original_url = ?",
         [url]
       );
 
@@ -130,8 +175,8 @@ router.post(
       // Insert the URL and uniqueId into the database
       const insertResult = await runQuery(
         conn,
-        "INSERT INTO urls (original_url, short_url_id) VALUES (?, ?)",
-        [url, uniqueId]
+        "INSERT INTO urls (original_url, short_url_id, topic_id) VALUES (?, ?, ?)",
+        [url, uniqueId, topic_id]
       );
 
       if (insertResult.affectedRows > 0) {
@@ -142,6 +187,7 @@ router.post(
           data: {
             original_url: url,
             shortened_url: `${process.env.PUBLIC_URL}/api/shorten/${uniqueId}`,
+            topic
           },
         });
       }
