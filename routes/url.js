@@ -217,10 +217,14 @@ router.post(
 );
 
 // ***Route to Get Overall URL Analytics***
-router.get("/analytics/overall", async (req, res) => {
+router.get("/analytics/overall", isAuthenticated, async (req, res) => {
   try {
     // Fetch URL ID and check existence
-    const urlResult = await runQuery(conn, "SELECT id FROM urls");
+    const urlResult = await runQuery(
+      conn,
+      "SELECT id FROM urls WHERE user_id = ?",
+      [req.user.id]
+    );
 
     if (urlResult.length === 0) {
       return res.status(404).json({
@@ -253,15 +257,15 @@ router.get("/analytics/overall", async (req, res) => {
 });
 
 // ***Route to Get URL Analytics by url alias***
-router.get("/analytics/:shortUrl", async (req, res) => {
+router.get("/analytics/:shortUrl", isAuthenticated, async (req, res) => {
   try {
     const { shortUrl } = req.params;
 
     // Fetch URL ID and check existence
     const urlResult = await runQuery(
       conn,
-      "SELECT id FROM urls WHERE short_url_id = ?",
-      [shortUrl]
+      "SELECT id FROM urls WHERE short_url_id = ? and user_id = ?",
+      [shortUrl, req.user.id]
     );
 
     if (urlResult.length === 0) {
@@ -293,7 +297,7 @@ router.get("/analytics/:shortUrl", async (req, res) => {
 });
 
 // ***Route to Get URL Analytics (Topic Wise)***
-router.get("/analytics/topic/:topic", async (req, res) => {
+router.get("/analytics/topic/:topic", isAuthenticated, async (req, res) => {
   try {
     let { topic } = req.params;
 
@@ -302,10 +306,10 @@ router.get("/analytics/topic/:topic", async (req, res) => {
     // Fetch URL ID and check existence
     const urlResult = await runQuery(
       conn,
-      "SELECT id FROM urls WHERE topic_id = (SELECT id FROM topic WHERE name = ?)",
-      [topic]
+      "SELECT id FROM urls WHERE topic_id = (SELECT id FROM topic WHERE name = ?) and user_id = ?",
+      [topic, req.user.id]
     );
-    
+
     if (urlResult.length === 0) {
       return res.status(404).json({
         status: "ERROR",
