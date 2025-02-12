@@ -9,7 +9,7 @@ const allShortenUrl = async (req, res) => {
   try {
     const fetchAllUrls = await runQuery(
       conn,
-      "SELECT short_url_id, original_url, created_at FROM urls WHERE user_id = ?",
+      "SELECT t1.short_url_id, t1.original_url, t1.created_at, t2.name as topic_name FROM urls t1 LEFT JOIN topic t2 on t2.id = t1.topic_id WHERE t1.user_id = ?",
       [req.user.id]
     );
 
@@ -28,6 +28,7 @@ const allShortenUrl = async (req, res) => {
       data: fetchAllUrls.map((item) => ({
         shortUrl: `${process.env.PUBLIC_URL}/api/shorten/${item.short_url_id}`,
         longUrl: item.original_url,
+        topic: item.topic_name,
         createdAt: item.created_at,
       })),
     });
@@ -114,9 +115,7 @@ const getShortUrlJSON = async (req, res) => {
 // Function: Render Index Page
 const renderIndexPage = async (req, res) => {
   try {
-    return res.render("index", {
-      user: req.user,
-    });
+    return res.redirect("/");
   } catch (error) {
     console.log("Error in rendering index page (in api.js) ---> ", error);
   }

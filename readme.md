@@ -10,6 +10,8 @@ This project is a URL shortener service built with Node.js. It allows users to s
 - Redirect to original URLs using shortened links
 - Track the number of times a shortened URL has been accessed
 - Get overall analytics of shortened URLs
+- Set topics for shortened URLs
+- Customizable shortened URLs by setting a custom alias
 
 ## Installation
 

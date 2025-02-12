@@ -48,6 +48,9 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
+// serve public folder to access static files
+app.use(express.static("public"));
+
 // Default Route
 app.get("/", isAuthenticated, (req, res) => {
   try {
