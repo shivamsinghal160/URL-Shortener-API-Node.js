@@ -1,0 +1,30 @@
+# ignore ALL .log files
+*.log
+
+# ignore ALL .txt files
+*.txt
+
+# ignore ALL .zip files\
+*.zip
+
+# ignore ALL Environment files
+.env
+.env.*
+
+# ignore ALL files in ANY directory named .vscode
+.vscode/
+
+# ignore ALL files in ANY directory named .git
+.git/
+
+# ignore ALL files in ANY directory named temp
+temp/
+
+# ignore ALL files in ANY directory name tempFile
+tempFiles/
+
+# ignore ALL files in ANY directory named node_modules
+node_modules/
+
+#ignore test.js 
+test.
