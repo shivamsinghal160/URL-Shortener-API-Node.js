@@ -9,6 +9,7 @@ const initPassport = require("./utils/passportStrategy");
 const rateLimit = require("express-rate-limit");
 const PORT = process.env.PORT || 3000;
 
+// Create Express App
 const app = express();
 
 // Session Middleware
@@ -17,7 +18,7 @@ app.use(
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false },
+    cookie: { secure: process.env.COOKIE_SECURE === "true" ? true : false },
   })
 );
 
@@ -28,6 +29,13 @@ initPassport(passport);
 
 // Middleware to parse JSON data
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+// Set View Engine with EJS
+app.set("view engine", "ejs");
+
+// Set Views Directory
+app.set("views", "./views");
 
 // Middleware to Access User IP Address
 app.use(getUserIpAddress);
@@ -42,17 +50,18 @@ app.listen(PORT, () => {
 
 // Default Route
 app.get("/", isAuthenticated, (req, res) => {
-  res.status(200).json({
-    status: "OK",
-    statusCode: 200,
-    message: `Hi ${req.user?.name}, Welcome to URL Shortener API, Please use /api/shorten to shorten your URL`,
-  });
+  try {
+    // Render index.ejs with user data
+    res.render("index", { user: req.user });
+  } catch (error) {
+    console.log(error, "Error in rendering index.ejs");
+  }
 });
 
 // Configure Rate Limiter Middleware
 const rateLimiter = rateLimit({
   windowMs: 10 * 1000, // 10 seconds
-  limit: 5,
+  limit: 3, // limit each IP to 3 requests per windowMs
   handler: (req, res, next, options) =>
     res.status(options.statusCode).json({
       status: "ERROR",

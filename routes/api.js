@@ -9,8 +9,46 @@ const {
   analysisUrlAnalytics,
   analysisUrlWiseAnalytics,
 } = require("../utils/analysisUrlAnalytics");
+const { Route } = require("express");
 
 const router = express.Router();
+
+// ***Route to Get All Shorten URL***
+router.get("/shorten/overall", isAuthenticated, async (req, res) => {
+  try {
+    const fetchAllUrls = await runQuery(
+      conn,
+      "SELECT short_url_id, original_url, created_at FROM urls WHERE user_id = ?",
+      [req.user.id]
+    );
+
+    if (fetchAllUrls.length === 0) {
+      return res.status(404).json({
+        status: "ERROR",
+        statusCode: 404,
+        message: "No URL found",
+      });
+    }
+
+    return res.status(200).json({
+      status: "OK",
+      statusCode: 200,
+      message: "All URLs fetched successfully",
+      data: fetchAllUrls.map((item) => ({
+        shortUrl: `${process.env.PUBLIC_URL}/api/shorten/${item.short_url_id}`,
+        longUrl: item.original_url,
+        createdAt: item.created_at,
+      })),
+    });
+  } catch (error) {
+    console.log("Error in fetching all URLs ---> ", error);
+    return res.status(500).json({
+      status: "ERROR",
+      statusCode: 500,
+      message: "Internal Server Error",
+    });
+  }
+});
 
 // ***Route to Redirect with Shorten URL***
 router.get("/shorten/:shortUrl", async (req, res) => {
@@ -70,7 +108,7 @@ router.post("/shorten/:shortUrl", async (req, res) => {
       status: "OK",
       statusCode: 200,
       message: "Redirecting to original URL",
-      original_url: fetchOriginalUrl[0].original_url,
+      longUrl: fetchOriginalUrl[0].original_url,
     });
   } catch (error) {
     console.log("Error in redirecting to original URL ---> ", error);
@@ -82,11 +120,22 @@ router.post("/shorten/:shortUrl", async (req, res) => {
   }
 });
 
+// ***Route to Render Index Page***
+router.get("/shorten", isAuthenticated, async (req, res) => {
+  try {
+    return res.render("index", {
+      user: req.user,
+    });
+  } catch (error) {
+    console.log("Error in rendering index page (in api.js) ---> ", error);
+  }
+});
+
 // ***Route to Create Shorten URL API***
 router.post(
   "/shorten",
   isAuthenticated,
-  [body("url").isURL().withMessage("Enter a Valid Url")],
+  [body("longUrl").isURL().withMessage("Enter a Valid Url")],
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -98,20 +147,21 @@ router.post(
     }
 
     try {
-      const url = req.body.url;
+      const url = req.body.longUrl;
 
       let isCustomAlias = false;
-      let custom_alias = "";
+      let customAlias = "";
       let topic_id = null;
-      if (req.body.custom_alias && req.body.custom_alias.trim() !== "") {
+      if (req.body.customAlias && req.body.customAlias.trim() !== "") {
         isCustomAlias = true;
-        custom_alias = req.body.custom_alias;
+        customAlias = req.body.customAlias;
 
         // Check if the custom alias is not reserved alias
-        if (custom_alias === "overall") {
-          return res.status(400).json({
+        if (customAlias === "overall") {
+          return res.render("index", {
             status: "ERROR",
             statusCode: 400,
+            user: req.user,
             message: "'overall' is a reserved alias",
           });
         }
@@ -119,14 +169,15 @@ router.post(
         const checkAlias = await runQuery(
           conn,
           "SELECT * FROM urls WHERE short_url_id = ?",
-          [custom_alias]
+          [customAlias]
         );
 
         if (checkAlias.length > 0) {
-          return res.status(400).json({
+          return res.render("index", {
             status: "ERROR",
             statusCode: 400,
-            message: `'${custom_alias}' alias already exists`,
+            user: req.user,
+            message: `'${customAlias}' alias already exists`,
           });
         }
       }
@@ -156,31 +207,33 @@ router.post(
       }
 
       // Generate a unique id
-      const uniqueId = !isCustomAlias ? createUniqueId() : custom_alias;
+      const uniqueId = !isCustomAlias ? createUniqueId() : customAlias;
 
       // Check if the URL already exists in the database
       const checkExistResult = await runQuery(
         conn,
-        "SELECT t1.original_url, t1.short_url_id, COALESCE(t2.name, '') as topic FROM urls t1 LEFT JOIN topic t2 on t2.id = t1.topic_id WHERE t1.original_url = ? and t1.user_id = ?",
+        "SELECT t1.short_url_id, COALESCE(t2.name, '') as topic, t1.created_at FROM urls t1 LEFT JOIN topic t2 on t2.id = t1.topic_id WHERE t1.original_url = ? and t1.user_id = ?",
         [url, req.user.id]
       );
 
       // if ERROR return
       if (checkExistResult.status === "ERROR") {
-        return res.status(500).json({
+        return res.render("index", {
           status: "ERROR",
           statusCode: 500,
+          user: req.user,
           message: "Internal Server Error",
         });
       }
 
       if (checkExistResult.length > 0) {
-        checkExistResult[0].shortened_url = `${process.env.PUBLIC_URL}/api/shorten/${checkExistResult[0].short_url_id}`;
+        checkExistResult[0].shortUrl = `${process.env.PUBLIC_URL}/api/shorten/${checkExistResult[0].short_url_id}`;
         delete checkExistResult[0].short_url_id;
 
-        return res.status(200).json({
+        return res.render("index", {
           status: "OK",
           statusCode: 200,
+          user: req.user,
           message: "URL already exists",
           data: checkExistResult[0],
         });
@@ -194,22 +247,24 @@ router.post(
       );
 
       if (insertResult.affectedRows > 0) {
-        return res.status(200).json({
+        return res.render("index", {
           status: "OK",
           statusCode: 200,
+          user: req.user,
           message: "URL shortened successfully",
           data: {
-            original_url: url,
-            shortened_url: `${process.env.PUBLIC_URL}/api/shorten/${uniqueId}`,
+            shortUrl: `${process.env.PUBLIC_URL}/api/shorten/${uniqueId}`,
             topic,
+            createdAt: new Date().toISOString(),
           },
         });
       }
     } catch (error) {
       console.log("error on /api/shorten api ---> ", error);
-      return res.status(500).json({
+      return res.render("index", {
         status: "ERROR",
         statusCode: 500,
+        user: req.user,
         message: "Internal Server Error",
       });
     }
@@ -238,7 +293,12 @@ router.get("/analytics/overall", async (req, res) => {
 
     console.log("urlId", urlId);
 
-    let data = await analysisUrlAnalytics(urlId);
+    let data = {
+      totalUrls: urlResult.length,
+      ...(await analysisUrlAnalytics(urlId)),
+    };
+
+    console.log("data2", data);
 
     return res.status(200).json({
       status: "OK",
