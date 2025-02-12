@@ -9,6 +9,7 @@ This project is a URL shortener service built with Node.js. It allows users to s
 - Shorten long URLs
 - Redirect to original URLs using shortened links
 - Track the number of times a shortened URL has been accessed
+- Get overall analytics of shortened URLs
 
 ## Installation
 
@@ -35,12 +36,12 @@ This project is a URL shortener service built with Node.js. It allows users to s
 
 ## API Endpoints for Shorten Url
 
-**No Auth Required**
+**-> No Auth Required**
 
 - `GET /api/shorten/:shortUrl`: Redirect to the original URL.
 - `POST /api/shorten/:shortUrl`: Fetch data in JSON for a shortened URL.
 
-**Auth Required**
+**-> Auth Required**
 
 - `GET /api/shorten/overall` : Get overall analytics of all the shortened URLs.
 - `POST /api/shorten`: Shorten a long URL.
@@ -55,10 +56,6 @@ This project is a URL shortener service built with Node.js. It allows users to s
 
 Contributions are welcome! Please open an issue or submit a pull request.
 
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
 ## Acknowledgements
 
 - [Node.js](https://nodejs.org/)
@@ -66,4 +63,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Author
 
-Shivam Singhal created this project.
+Shivam Singhal
