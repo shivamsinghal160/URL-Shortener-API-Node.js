@@ -1,8 +1,8 @@
-# URL Shortener Node.js Project
+# URL Shortener Node.js
 
 ## Description
 
-This project is a URL shortener service built with Node.js. It allows users to shorten long URLs and redirect to the original URLs using the shortened links.
+This project is a URL shortener service built with Node.js. It allows users to shorten long URLs and redirect to the original URLs using the shortened links and get overall analytics of shortened URLs. Users can also set topics for shortened URLs and customize shortened URLs by setting a custom alias.
 
 ## Features
 
