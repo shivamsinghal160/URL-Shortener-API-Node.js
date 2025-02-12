@@ -5,7 +5,7 @@ const passport = require("passport");
 const session = require("express-session");
 const isAuthenticated = require("./middleware/isAuthenticated");
 const getUserIpAddress = require("./middleware/accessIPAddress");
-const initPassport = require("./utils/passportStrategy");
+const initPassport = require("./controllers/passportStrategy");
 const rateLimit = require("express-rate-limit");
 const PORT = process.env.PORT || 3000;
 

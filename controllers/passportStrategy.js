@@ -1,6 +1,6 @@
 const initPassport = async (passport) => {
   const { conn } = require("../db");
-  const runQuery = require("./queryHandler");
+  const runQuery = require("../utils/queryHandler");
   const GoogleStrategy = require("passport-google-oauth20").Strategy;
   passport.use(
     new GoogleStrategy(

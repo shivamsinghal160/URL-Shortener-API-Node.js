@@ -1,6 +1,6 @@
 const analysisUrlAnalytics = async (urlId) => {
   const { conn } = require("../db");
-  const runQuery = require("./queryHandler");
+  const runQuery = require("../utils/queryHandler");
   // Run all queries in parallel
   const [totalAndUniqueClicks, last7DaysClicks, deviceClicks, osClicks] =
     await Promise.all([
@@ -68,7 +68,7 @@ const analysisUrlAnalytics = async (urlId) => {
 
 const analysisUrlWiseAnalytics = async (urlId) => {
   const { conn } = require("../db");
-  const runQuery = require("./queryHandler");
+  const runQuery = require("../utils/queryHandler");
   // Run all queries in parallel
   const [totalAndUniqueClicks, last7DaysClicks, urlWiseTotalAndUniqueClicks] =
     await Promise.all([
