@@ -43,6 +43,7 @@ const initPassport = async (passport) => {
 
           return done(null, profile);
         } catch (error) {
+          console.log("ERROR in PassportStrategy: ", error);
           done(error, null);
         }
       }
@@ -58,6 +59,7 @@ const initPassport = async (passport) => {
       ]);
       done(null, user[0]);
     } catch (error) {
+      console.log("ERROR in PassportStrategyDeserializeUser: ", error);
       done(error, null);
     }
   });
