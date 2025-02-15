@@ -17,7 +17,7 @@ This project is a URL shortener service built with Node.js. It allows users to s
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/url-shortener.git
+   git clone https://github.com/shivamsinghal160/URL-Shortener-API-Node.js.git
    ```
 2. Navigate to the project directory:
    ```bash
