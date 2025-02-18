@@ -74,7 +74,7 @@ This project is a URL shortener service built with Node.js. It allows users to s
 
 **-> Auth Required**
 
-- `GET /api/shorten/overall` : Get overall analytics of all the shortened URLs.
+- `GET /api/shorten/overall` : Get all the shortened URLs belongs to you in JSON Format.
 - `POST /api/shorten`: Shorten a long URL.
 
 ## API Endpoints for Shorten URLs Analytics (Auth Required)
